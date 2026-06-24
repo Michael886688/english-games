@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jared 英语闯关 · Anthropic GTM (CLAFTS)</title>
+<style>
+  :root{
+    --bg:#0e1014; --card:#181b22; --card2:#1f232c; --line:#2a2f3a;
+    --txt:#eef1f6; --dim:#9aa3b2; --accent:#5b8cff; --accent2:#7c5cff;
+    --good:#37d399; --bad:#ff5d6c; --gold:#ffce4d; --warn:#ffb454;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 55%);
+    color:var(--txt); font-family:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    display:flex; flex-direction:column; align-items:center; min-height:100%;
+  }
+  .wrap{width:100%; max-width:680px; padding:16px 16px 60px; flex:1}
+  /* top bar */
+  .top{display:flex; align-items:center; gap:10px; margin:4px 0 14px}
+  .badge{display:flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--line);
+    padding:7px 11px; border-radius:14px; font-size:13px; font-weight:600}
+  .badge b{color:var(--gold)}
+  .lvlbar{flex:1; height:10px; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .lvlfill{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s}
+  h1{font-size:20px; margin:0 0 2px; letter-spacing:.3px}
+  .sub{color:var(--dim); font-size:13px; margin:0 0 18px}
+  /* home menu */
+  .menu{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .tile{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 16px;
+    cursor:pointer; transition:.15s; position:relative; overflow:hidden}
+  .tile:hover{transform:translateY(-3px); border-color:var(--accent)}
+  .tile .ic{font-size:30px}
+  .tile h3{margin:8px 0 3px; font-size:16px}
+  .tile p{margin:0; color:var(--dim); font-size:12px; line-height:1.5}
+  .tile.full{grid-column:1/3}
+  /* generic card */
+  .card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:22px 20px; margin-bottom:14px}
+  .hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px}
+  .back{background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:8px 14px;
+    border-radius:12px; cursor:pointer; font-size:13px; font-weight:600}
+  .back:hover{border-color:var(--accent)}
+  .prog{color:var(--dim); font-size:13px; font-weight:600}
+  /* flashcard */
+  .word-en{font-size:40px; font-weight:800; letter-spacing:.5px; margin:4px 0}
+  .pos{color:var(--accent); font-weight:700; font-size:14px}
+  .word-zh{font-size:20px; margin:10px 0 4px}
+  .icon-big{font-size:84px; line-height:1; margin:6px 0 2px; filter:drop-shadow(0 6px 14px rgba(0,0,0,.4))}
+  .usage{background:var(--card2); border-radius:12px; padding:11px 13px; margin:12px 0; color:var(--dim); font-size:14px; line-height:1.6}
+  .usage b{color:var(--txt)}
+  .tip{background:linear-gradient(180deg,#22202c,#1b1922); border:1px solid #3a3550; border-radius:12px;
+    padding:11px 13px; font-size:13.5px; line-height:1.65}
+  .tip .lab{color:var(--warn); font-weight:700; font-size:12px; display:block; margin-bottom:3px}
+  .row{display:flex; gap:10px; margin-top:16px}
+  .btn{flex:1; padding:14px; border-radius:14px; border:none; font-size:15px; font-weight:700; cursor:pointer; transition:.12s}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#fff}
+  .btn-ghost{background:var(--card2); color:var(--txt); border:1px solid var(--line)}
+  .btn-sound{background:var(--card2); border:1px solid var(--line); color:var(--txt); flex:0 0 auto; width:58px; font-size:22px}
+  .btn-sound.playing{border-color:var(--accent); color:var(--accent)}
+  /* quiz */
+  .qtype{color:var(--accent); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px}
+  .q{font-size:26px; font-weight:800; margin:8px 0 4px; line-height:1.35}
+  .q small{font-size:15px; color:var(--dim); font-weight:600; display:block; margin-top:6px}
+  .opts{display:flex; flex-direction:column; gap:11px; margin-top:18px}
+  .opt{background:var(--card2); border:2px solid var(--line); border-radius:14px; padding:15px 16px;
+    cursor:pointer; font-size:16px; transition:.12s; text-align:left; color:var(--txt); font-weight:600}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{border-color:var(--good); background:rgba(55,211,153,.14)}
+  .opt.wrong{border-color:var(--bad); background:rgba(255,93,108,.14)}
+  .opt.disabled{pointer-events:none; opacity:.85}
+  .feedback{margin-top:16px; padding:14px; border-radius:14px; font-size:14px; line-height:1.6; display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:rgba(55,211,153,.12); border:1px solid var(--good)}
+  .feedback.no{background:rgba(255,93,108,.10); border:1px solid var(--bad)}
+  .combo{position:fixed; top:18px; left:50%; transform:translateX(-50%); background:var(--gold); color:#1a1300;
+    font-weight:800; padding:8px 18px; border-radius:20px; font-size:15px; opacity:0; pointer-events:none;
+    transition:.3s; z-index:50}
+  .combo.show{opacity:1; transform:translateX(-50%) translateY(6px)}
+  /* sentence builder */
+  .zh-hint{color:var(--dim); font-size:15px; line-height:1.6; margin-bottom:14px}
+  .answer-area{min-height:60px; background:var(--card2); border:1.5px dashed var(--line); border-radius:14px;
+    padding:12px; display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start; margin-bottom:14px}
+  .pool{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{background:var(--card2); border:1.5px solid var(--line); border-radius:11px; padding:9px 13px;
+    cursor:pointer; font-size:15px; font-weight:600; user-select:none; transition:.1s}
+  .chip:hover{border-color:var(--accent)}
+  .chip.used{opacity:.25; pointer-events:none}
+  .chip.in-answer{border-color:var(--accent); background:rgba(91,140,255,.12)}
+  .sent-en{font-size:18px; line-height:1.6; font-weight:600; margin:6px 0}
+  /* result */
+  .result{text-align:center; padding:30px 20px}
+  .result .big{font-size:64px}
+  .result h2{font-size:26px; margin:8px 0}
+  .stars{font-size:34px; letter-spacing:6px; margin:10px 0}
+  .statrow{display:flex; justify-content:space-around; margin:18px 0; gap:10px}
+  .stat{flex:1; background:var(--card2); border-radius:14px; padding:14px 8px}
+  .stat .n{font-size:24px; font-weight:800; color:var(--accent)}
+  .stat .l{font-size:12px; color:var(--dim); margin-top:2px}
+  .muted{color:var(--dim); font-size:12px; text-align:center; margin-top:24px; line-height:1.7}
+  .level-pick{display:flex; gap:8px; margin:14px 0 4px}
+  .lp{flex:1; padding:11px 6px; border-radius:12px; border:1.5px solid var(--line); background:var(--card2);
+    cursor:pointer; text-align:center; font-weight:700; font-size:13px}
+  .lp.on{border-color:var(--accent); background:rgba(91,140,255,.14); color:var(--accent)}
+  .lp small{display:block; color:var(--dim); font-weight:500; font-size:11px; margin-top:2px}
+</style>
+</head>
+<body>
+<div class="combo" id="combo"></div>
+<div class="wrap">
+  <div class="top">
+    <div class="badge">🔥 <span>连胜</span> <b id="streak">0</b></div>
+    <div class="lvlbar"><div class="lvlfill" id="lvlfill"></div></div>
+    <div class="badge">⭐ Lv<b id="level">1</b></div>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+/* ============ 数据：Anthropic GTM 案例 (Jared / CLAFTS) ============ */
+const WORDS = [
+  {en:"go-to-market", pos:"n.", zh:"市场进入（策略/团队）GTM", ic:"🎯", usage:"<b>go-to-market</b> product manager", tip:"连读 /ˈɡoʊ tə ˈmɑːrkɪt/，三个词一口气说，重音落在 'go' 和 'mar'。"},
+  {en:"account executive", pos:"n.", zh:"客户经理（销售岗）AE", ic:"💼", usage:"a startup <b>account executive</b>", tip:"account /əˈkaʊnt/ 重音在后；executive /ɪɡˈzekjətɪv/ 重音在 'zec'，别读成“艾克思”。"},
+  {en:"sales rep", pos:"n.", zh:"销售代表（BDR）", ic:"📞", usage:"a BDR working past midnight", tip:"rep 是 representative 的缩写，读 /rep/ 短促。BDR 三个字母分开念。"},
+  {en:"outbound", pos:"n./adj.", zh:"主动外联（销售开发）", ic:"📤", usage:"doing <b>outbound</b>；<b>outbound</b> time", tip:"读 /ˈaʊtbaʊnd/，重音在前 'out'，两个 ou 都发 'ow'（像 'now'）。"},
+  {en:"pipeline", pos:"n.", zh:"销售管线（管理）", ic:"🚰", usage:"<b>pipeline</b> management 管线管理", tip:"读 /ˈpaɪplaɪn/，pipe 押 'my' 的韵，两段都长音，重音在前。"},
+  {en:"forecasting", pos:"n.", zh:"销售预测", ic:"🔮", usage:"<b>forecasting</b> guidance 预测指引", tip:"读 /ˈfɔːrkæstɪŋ/，fore 像“福尔”，重音在前。"},
+  {en:"at-risk deals", pos:"n.", zh:"濒临流失的交易", ic:"⚠️", usage:"surfaces <b>at-risk deals</b>", tip:"risk /rɪsk/ 三个辅音收紧；deals 结尾 -ls 要带出 z 音。"},
+  {en:"progression", pos:"n.", zh:"（交易）推进", ic:"📈", usage:"<b>progression</b> recommendations", tip:"读 /prəˈɡreʃn/，重音在 'gre'，-sion 发 'shn'。"},
+  {en:"deal", pos:"n.", zh:"交易／单子", ic:"🤝", usage:"at-risk <b>deals</b>", tip:"读 /diːl/，长音 'ee'，结尾 l 舌尖顶上颚。"},
+  {en:"CRM", pos:"n.", zh:"客户关系管理系统", ic:"🗂️", usage:"<b>CRM</b> data through MCP", tip:"三个字母分开念：C-R-M /siː ɑːr em/。"},
+  {en:"evangelism", pos:"n.", zh:"（内部）布道／自发推广", ic:"📣", usage:"did most of the <b>evangelism</b> themselves", tip:"读 /ɪˈvændʒəlɪzəm/，重音在 'van'，一长串，节奏 i-VAN-je-li-zm。"},
+  {en:"ramp", pos:"v.", zh:"上手／进入状态（更快）", ic:"🛗", usage:"help people <b>ramp</b> faster", tip:"读 /ræmp/，a 张大嘴 'æ'，结尾 mp 双辅音收住。"},
+  {en:"new hire", pos:"n.", zh:"新员工", ic:"🆕", usage:"install it on day one for every <b>new hire</b>", tip:"hire /ˈhaɪər/，h 要送气，像 'higher'。两词连读。"},
+  {en:"onboard", pos:"v.", zh:"加入；上手", ic:"🚪", usage:"the team came <b>on board</b>", tip:"读 /ˌɑːnˈbɔːrd/，board 像“波尔德”。"},
+  {en:"talking points", pos:"n.", zh:"谈话要点", ic:"🗒️", usage:"produces <b>talking points</b> before the call", tip:"talking /ˈtɔːkɪŋ/，l 不发音！像“透-king”。"},
+  {en:"follow-up", pos:"n./adj.", zh:"跟进（邮件）", ic:"↪️", usage:"generate <b>follow-up</b> emails", tip:"读 /ˈfɑːloʊ ʌp/，follow 重音在前，up 轻读，连成一团。"},
+  {en:"recap", pos:"n.", zh:"复盘／回顾", ic:"🔁", usage:"daily <b>recap</b> skill 每日复盘", tip:"读 /ˈriːkæp/，re 长音 'ree'，重音在前。"},
+  {en:"brief", pos:"n.", zh:"简报", ic:"📋", usage:"daily <b>brief</b> skill 每日简报", tip:"读 /briːf/，br 连读，长音 'ee'，结尾 f 咬下唇。"},
+  {en:"transcript", pos:"n.", zh:"会议转录（文字稿）", ic:"📝", usage:"emails from meeting <b>transcripts</b>", tip:"读 /ˈtrænskrɪpt/，重音在前 'tran'，结尾 -pts 三辅音轻收。"},
+  {en:"workflow", pos:"n.", zh:"工作流", ic:"⛓️", usage:"rebuilt his <b>workflows</b>", tip:"读 /ˈwɜːrkfloʊ/，work 卷舌 'er'，flow 长音 'oh'。"},
+  {en:"iteration", pos:"n.", zh:"迭代", ic:"♻️", usage:"hundreds of <b>iterations</b> 上百轮迭代", tip:"读 /ˌɪtəˈreɪʃn/，重音在 'ra'，-tion 发 'shn'。"},
+  {en:"system prompt", pos:"n.", zh:"系统提示词", ic:"⌨️", usage:"reworked the <b>system prompt</b>", tip:"prompt /prɑːmpt/，结尾 -mpt 三个辅音都要轻轻带到。"},
+  {en:"plugin", pos:"n.", zh:"插件", ic:"🔌", usage:"packages them as a <b>plugin</b>", tip:"读 /ˈplʌɡɪn/，plug 像“扑拉格”，重音在前。"},
+  {en:"skill", pos:"n.", zh:"（Claude）技能", ic:"🧩", usage:"20-plus <b>skills</b> wired in", tip:"读 /skɪl/，sk 连读，结尾 -lls 带出 z。"},
+  {en:"MCP", pos:"n.", zh:"MCP 服务器／连接器", ic:"🔗", usage:"CRM data through <b>MCP</b> servers", tip:"三个字母分开念：M-C-P /em siː piː/。"},
+  {en:"agent", pos:"n.", zh:"智能体", ic:"🤖", usage:"essentially becomes an <b>agent</b>", tip:"读 /ˈeɪdʒənt/，a 是长音 'ay'，重音在前，-gent 软读 'jənt'。"},
+  {en:"Agent SDK", pos:"n.", zh:"智能体开发工具包", ic:"🧰", usage:"experimenting with the <b>Agent SDK</b>", tip:"SDK 三字母分开念 /es diː keɪ/。"},
+  {en:"ship", pos:"v.", zh:"发布／上线（更新）", ic:"🚀", usage:"<b>ships</b> product changes every 24-48h", tip:"读 /ʃɪp/，sh 像嘘声，短促。这里不是“船”，是“发布”。"},
+  {en:"API", pos:"n.", zh:"接口", ic:"🔣", usage:"uses the Claude <b>API</b>", tip:"三字母分开念 /eɪ piː aɪ/，最后一个是 'eye'。"},
+  {en:"prompt caching", pos:"n.", zh:"提示缓存（折扣）", ic:"💾", usage:"<b>prompt caching</b> discounts", tip:"caching /ˈkæʃɪŋ/，ch 发 'sh'，像“凯-性”。"},
+  {en:"pattern matching", pos:"n.", zh:"模式匹配", ic:"🧬", usage:"uses <b>pattern matching</b> to mimic his voice", tip:"pattern /ˈpætərn/，重音在前；matching 的 -tch 发 'ch'。"},
+  {en:"augment", pos:"v.", zh:"增强／扩展能力", ic:"➕", usage:"<b>augment</b> and do more things", tip:"读 /ɔːɡˈment/，au 像“奥”，重音在后 'ment'。"},
+  {en:"out of the box", pos:"phr.", zh:"开箱即用", ic:"📦", usage:"<b>out of the box</b>, Claude's writing…", tip:"四个词快速连读，重音落在 'box'，of-the 轻轻滑过。"},
+  {en:"draft", pos:"n./v.", zh:"草稿；起草", ic:"✍️", usage:"<b>draft</b> replies to customer emails", tip:"读 /dræft/，a 张大嘴 'æ'，结尾 ft 双辅音。"},
+  {en:"barrier", pos:"n.", zh:"门槛／障碍", ic:"🚧", usage:"the technical <b>barrier</b> dissolving", tip:"读 /ˈbæriər/，重音在前 'ba'，结尾 -rier 卷舌带过。"},
+  {en:"dissolve", pos:"v.", zh:"瓦解／消融", ic:"💧", usage:"the barrier <b>dissolving</b> 门槛瓦解", tip:"读 /dɪˈzɑːlv/，s 发 'z' 音！重音在后 'zolve'。"},
+  {en:"intimidating", pos:"adj.", zh:"唬人的；让人发怵的", ic:"😰", usage:"made me feel <b>intimidated</b>", tip:"读 /ɪnˈtɪmɪdeɪtɪŋ/，重音在 'tim'，一长串别慌。"},
+  {en:"refusal", pos:"n.", zh:"拒绝", ic:"🚫", usage:"started to have <b>refusals</b>", tip:"读 /rɪˈfjuːzl/，重音在 'fu'，s 发 'z'，fu 带 y 音 'fyoo'。"},
+  {en:"mimic", pos:"v.", zh:"模仿", ic:"🎭", usage:"<b>mimic</b> his voice 模仿他的语气", tip:"读 /ˈmɪmɪk/，两个 i 都短促，重音在前，像“米-米克”。"},
+  {en:"voice", pos:"n.", zh:"（写作）语气／风格", ic:"🗣️", usage:"drafts in his <b>voice</b> 用他的语气", tip:"读 /vɔɪs/，oi 像“奥-意”滑动，结尾 ce 发 's'。"},
+];
+
+const CHUNKS = [
+  {en:"Claude Code", zh:"（产品名）Claude Code"},
+  {en:"go-to-market team", zh:"市场进入团队"},
+  {en:"product manager", zh:"产品经理"},
+  {en:"sales team", zh:"销售团队"},
+  {en:"account executive", zh:"客户经理（销售）"},
+  {en:"daily brief", zh:"每日简报"},
+  {en:"daily recap", zh:"每日复盘"},
+  {en:"customer emails", zh:"客户邮件"},
+  {en:"follow-up emails", zh:"跟进邮件"},
+  {en:"talking points", zh:"谈话要点"},
+  {en:"web search", zh:"联网搜索"},
+  {en:"system prompt", zh:"系统提示词"},
+  {en:"pattern matching", zh:"模式匹配"},
+  {en:"at-risk deals", zh:"濒临流失的交易"},
+  {en:"pipeline management", zh:"销售管线管理"},
+  {en:"chaining workflows", zh:"串联工作流"},
+  {en:"out of the box", zh:"开箱即用"},
+  {en:"at scale", zh:"大规模地"},
+  {en:"at the end of the day", zh:"归根结底；一天结束时"},
+  {en:"on top of that", zh:"在那之上；除此之外"},
+  {en:"come on board", zh:"加入；上车"},
+  {en:"get hours back", zh:"把时间省回来"},
+  {en:"ramp faster", zh:"更快上手"},
+  {en:"new hire", zh:"新员工"},
+  {en:"there's no turning back", zh:"没有回头路了"},
+];
+
+// 句子（拼词游戏会拆分），从易到难
+const SENTENCES = [
+  {en:"There's no turning back.", zh:"没有回头路了。"},
+  {en:"Before joining Anthropic, Jared had never written a line of code.", zh:"加入 Anthropic 之前，Jared 从没写过一行代码。"},
+  {en:"It took multiple iterations, but eventually CLAFTS was saving him hours a day.", zh:"经过多轮迭代，CLAFTS 最终每天为他省下好几个小时。"},
+  {en:"I don't need to keep all of that in my head.", zh:"我不需要把这些全记在脑子里。"},
+  {en:"You couple those together and you get Claude managing your daily tasks.", zh:"你把这些组合起来，就得到一个替你打理日常任务的 Claude。"},
+  {en:"Find one task that's slowing you down and ask Claude how to build a solution.", zh:"找一件拖慢你的事，然后问 Claude 怎么给它做个解法。"},
+  {en:"He reworked the system prompt until the drafts matched his own writing style.", zh:"他反复改系统提示词，直到草稿贴合他自己的写作风格。"},
+  {en:"Within months of launching the plugin, most of the sales org was using it.", zh:"插件上线几个月内，销售团队大部分人都在用它。"},
+];
+
+/* ============ 状态 ============ */
+let S = JSON.parse(localStorage.getItem("jared_en")||"null") || {xp:0, level:1, streak:0, best:0, seen:{}};
+function save(){localStorage.setItem("jared_en", JSON.stringify(S));}
+function xpForLevel(l){return 60 + (l-1)*40;}
+function addXP(n){
+  S.xp += n;
+  while(S.xp >= xpForLevel(S.level)){ S.xp -= xpForLevel(S.level); S.level++; toast("🎉 升到 Lv"+S.level+"！"); }
+  save(); paintTop();
+}
+function paintTop(){
+  document.getElementById("streak").textContent = S.streak;
+  document.getElementById("level").textContent = S.level;
+  document.getElementById("lvlfill").style.width = Math.min(100,(S.xp/xpForLevel(S.level))*100)+"%";
+}
+
+/* ============ 发音（英语 TTS）============ */
+let enVoice=null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  enVoice = vs.find(v=>/en[-_]US/i.test(v.lang) && /female|samantha|zira|aria|jenny/i.test(v.name))
+         || vs.find(v=>/en[-_]US/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || null;
+}
+if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, slow, btn){
+  if(!('speechSynthesis' in window)) { toast("此浏览器不支持发音"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang="en-US"; if(enVoice) u.voice=enVoice;
+  u.rate = slow?0.62:0.92; u.pitch=1;
+  if(btn){ btn.classList.add("playing"); u.onend=()=>btn.classList.remove("playing"); u.onerror=()=>btn.classList.remove("playing"); }
+  speechSynthesis.speak(u);
+}
+
+/* ============ 小工具 ============ */
+const app = ()=>document.getElementById("app");
+function shuffle(a){a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;}
+function toast(msg){
+  const c=document.getElementById("combo"); c.textContent=msg; c.classList.add("show");
+  clearTimeout(c._t); c._t=setTimeout(()=>c.classList.remove("show"),1100);
+}
+
+/* ============ 主菜单 ============ */
+function home(){
+  speechSynthesis && speechSynthesis.cancel();
+  app().innerHTML = `
+    <h1>Jared 英语闯关 🎮</h1>
+    <p class="sub">Anthropic GTM 案例 (CLAFTS) · 边玩边学单词 / 句子 / 发音</p>
+    <div class="menu">
+      <div class="tile" onclick="memoryMode()">
+        <div class="ic">🃏</div><h3>单词记忆卡</h3>
+        <p>图片 + 英语发音 + 发音技巧，一张张过</p>
+      </div>
+      <div class="tile" onclick="quizSetup()">
+        <div class="ic">🎯</div><h3>单词闯关</h3>
+        <p>选择题，难度逐级提升，连对有连击</p>
+      </div>
+      <div class="tile" onclick="chunkQuiz()">
+        <div class="ic">🧩</div><h3>词块速记</h3>
+        <p>成块进脑子，地道表达练语感</p>
+      </div>
+      <div class="tile" onclick="sentenceMode()">
+        <div class="ic">📝</div><h3>金句拼一拼</h3>
+        <p>把打乱的单词拼成案例里的标杆句</p>
+      </div>
+      <div class="tile full" onclick="speakMode()">
+        <div class="ic">🔊</div><h3>跟读练发音</h3>
+        <p>听标准发音，慢速精听，对照口型技巧</p>
+      </div>
+    </div>
+    <p class="muted">进度自动保存 · 已学单词 ${Object.keys(S.seen).length}/${WORDS.length} · 最高连胜 ${S.best}<br>
+    💡 第一次点发音没声音？再点一下即可（浏览器需要你先互动）</p>
+  `;
+  paintTop();
+}
+
+/* ============ 单词记忆卡 ============ */
+let mIdx=0, mList=[];
+function memoryMode(){ mList = shuffle(WORDS); mIdx=0; renderCard(); }
+function renderCard(){
+  const w = mList[mIdx];
+  app().innerHTML = `
+    <div class="hdr">
+      <button class="back" onclick="home()">← 返回</button>
+      <span class="prog">${mIdx+1} / ${mList.length}</span>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="icon-big">${w.ic}</div>
+      <div class="word-en">${w.en}</div>
+      <div class="pos">${w.pos}</div>
+      <div class="word-zh">${w.zh}</div>
+      <div class="usage">${w.usage}</div>
+      <div class="tip"><span class="lab">🗣️ 发音技巧</span>${w.tip}</div>
+      <div class="row">
+        <button class="btn btn-sound" id="sb" onclick="speak('${w.en}',false,this)">🔊</button>
+        <button class="btn btn-ghost" onclick="speak('${w.en}',true,this)">🐢 慢速</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="prevCard()" ${mIdx===0?'disabled style=opacity:.4':''}>← 上一个</button>
+        <button class="btn btn-primary" onclick="nextCard()">${mIdx===mList.length-1?'完成 ✓':'下一个 →'}</button>
+      </div>
+    </div>
+  `;
+  if(!S.seen[w.en]){ S.seen[w.en]=1; addXP(2); }
+  setTimeout(()=>speak(w.en,false,document.getElementById("sb")),250);
+}
+function nextCard(){ if(mIdx<mList.length-1){mIdx++; renderCard();} else { toast("🃏 一轮过完！"); home(); } }
+function prevCard(){ if(mIdx>0){mIdx--; renderCard();} }
+
+/* ============ 单词闯关（选择题）============ */
+let qLevel=1, qList=[], qIdx=0, qRight=0, qCombo=0;
+function quizSetup(){
+  app().innerHTML = `
+    <div class="hdr"><button class="back" onclick="home()">← 返回</button><span class="prog">选难度</span></div>
+    <div class="card">
+      <h1 style="margin:0 0 6px">🎯 单词闯关</h1>
+      <p class="sub" style="margin:0 0 8px">选个难度，每关 8 题</p>
+      <div class="level-pick">
+        <div class="lp on" data-l="1" onclick="pickLP(this)">Lv1 入门<small>看英选中文</small></div>
+        <div class="lp" data-l="2" onclick="pickLP(this)">Lv2 进阶<small>看中文选英</small></div>
+        <div class="lp" data-l="3" onclick="pickLP(this)">Lv3 高手<small>看用法猜词</small></div>
+      </div>
+      <div class="row"><button class="btn btn-primary" onclick="startQuiz()">开始闯关 🚀</button></div>
+    </div>
+    <p class="muted">连对越多，连击加分越高 🔥</p>`;
+}
+function pickLP(el){ document.querySelectorAll('.lp').forEach(x=>x.classList.remove('on')); el.classList.add('on'); qLevel=+el.dataset.l; }
+function startQuiz(){ qList = shuffle(WORDS).slice(0,8); qIdx=0; qRight=0; qCombo=0; renderQ(); }
+function renderQ(){
+  const w = qList[qIdx];
+  let qText, qSub, correct, pool;
+  if(qLevel===1){ qText=w.en; qSub=w.pos; correct=w.zh; pool=WORDS.map(x=>x.zh); }
+  else if(qLevel===2){ qText=w.zh; qSub="选对应英文"; correct=w.en; pool=WORDS.map(x=>x.en); }
+  else { qText=w.usage.replace(/<[^>]+>/g,''); qSub="👆 根据用法，这是哪个词？"; correct=w.en; pool=WORDS.map(x=>x.en); }
+  const wrong = shuffle(pool.filter(x=>x!==correct)).slice(0,3);
+  const opts = shuffle([correct,...wrong]);
+  app().innerHTML = `
+    <div class="hdr"><button class="back" onclick="home()">← 返回</button><span class="prog">第 ${qIdx+1} / ${qList.length} 题 · 答对 ${qRight}</span></div>
+    <div class="card">
+      <div class="qtype">Lv${qLevel} ${qLevel===1?'看英选中文':qLevel===2?'看中文选英':'看用法猜词'}</div>
+      <div class="q">${qText}<small>${qSub}</small></div>
+      <div class="opts" id="opts">
+        ${opts.map(o=>`<button class="opt" onclick="answer(this,'${encodeURIComponent(o)}','${encodeURIComponent(correct)}')">${o}</button>`).join('')}
+      </div>
+      <div class="feedback" id="fb"></div>
+    </div>`;
+  if(qLevel!==2 && qLevel!==3){ /* lv1 念出英文题干 */ setTimeout(()=>speak(w.en,false),200); }
+}
+function answer(el, picked, correct){
+  picked=decodeURIComponent(picked); correct=decodeURIComponent(correct);
+  const w = qList[qIdx];
+  document.querySelectorAll('.opt').forEach(o=>{
+    o.classList.add('disabled');
+    if(o.textContent===correct) o.classList.add('correct');
+    if(o.textContent===picked && picked!==correct) o.classList.add('wrong');
+  });
+  const fb = document.getElementById('fb');
+  speak(w.en,false);
+  if(picked===correct){
+    qRight++; qCombo++; S.streak++; if(S.streak>S.best){S.best=S.streak;}
+    const bonus = qCombo>=3?qCombo:0;
+    addXP(5+bonus);
+    if(qCombo>=2) toast("🔥 连击 x"+qCombo+(bonus?"  +"+bonus:""));
+    fb.className="feedback ok show";
+    fb.innerHTML = `✅ 对了！<b>${w.en}</b> ${w.pos} = ${w.zh}<br><span style="color:var(--dim)">${w.usage.replace(/<[^>]+>/g,'')}</span>`;
+  } else {
+    qCombo=0; S.streak=0;
+    fb.className="feedback no show";
+    fb.innerHTML = `❌ 正确答案：<b>${correct}</b><br><span style="color:var(--dim)">${w.en} ${w.pos} = ${w.zh} · ${w.usage.replace(/<[^>]+>/g,'')}</span>`;
+  }
+  save(); paintTop();
+  const btn=document.createElement('button');
+  btn.className="btn btn-primary"; btn.style.marginTop="14px";
+  btn.textContent = qIdx===qList.length-1?"看结果 🏁":"下一题 →";
+  btn.onclick=()=>{ if(qIdx<qList.length-1){qIdx++; renderQ();} else quizResult(); };
+  fb.appendChild(btn);
+}
+function quizResult(){
+  const pct = Math.round(qRight/qList.length*100);
+  const stars = pct>=90?"⭐⭐⭐":pct>=60?"⭐⭐":pct>0?"⭐":"💫";
+  const emoji = pct>=90?"🏆":pct>=60?"😎":"💪";
+  app().innerHTML = `
+    <div class="card result">
+      <div class="big">${emoji}</div>
+      <h2>${pct>=90?"完美通关！":pct>=60?"不错哦！":"再来一遍会更好"}</h2>
+      <div class="stars">${stars}</div>
+      <div class="statrow">
+        <div class="stat"><div class="n">${qRight}/${qList.length}</div><div class="l">答对</div></div>
+        <div class="stat"><div class="n">${pct}%</div><div class="l">正确率</div></div>
+        <div class="stat"><div class="n">Lv${S.level}</div><div class="l">当前等级</div></div>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="home()">回首页</button>
+        <button class="btn btn-primary" onclick="startQuiz()">再来一关 🔁</button>
+      </div>
+    </div>`;
+}
+
+/* ============ 词块速记 ============ */
+let cList=[], cIdx=0, cRight=0;
+function chunkQuiz(){ cList=shuffle(CHUNKS).slice(0,8); cIdx=0; cRight=0; renderChunk(); }
+function renderChunk(){
+  const c=cList[cIdx];
+  const wrong=shuffle(CHUNKS.filter(x=>x.zh!==c.zh)).slice(0,3).map(x=>x.zh);
+  const opts=shuffle([c.zh,...wrong]);
+  app().innerHTML=`
+    <div class="hdr"><button class="back" onclick="home()">← 返回</button><span class="prog">${cIdx+1}/${cList.length} · 对 ${cRight}</span></div>
+    <div class="card">
+      <div class="qtype">🧩 词块速记</div>
+      <div class="q">${c.en}<small>这个地道表达是什么意思？</small></div>
+      <div class="opts">${opts.map(o=>`<button class="opt" onclick="ansChunk(this,'${encodeURIComponent(o)}','${encodeURIComponent(c.zh)}')">${o}</button>`).join('')}</div>
+      <div class="feedback" id="fb"></div>
+    </div>`;
+  setTimeout(()=>speak(c.en,false),200);
+}
+function ansChunk(el,picked,correct){
+  picked=decodeURIComponent(picked); correct=decodeURIComponent(correct); const c=cList[cIdx];
+  document.querySelectorAll('.opt').forEach(o=>{o.classList.add('disabled');
+    if(o.textContent===correct)o.classList.add('correct'); if(o.textContent===picked&&picked!==correct)o.classList.add('wrong');});
+  const fb=document.getElementById('fb'); speak(c.en,false);
+  if(picked===correct){ cRight++; S.streak++; if(S.streak>S.best)S.best=S.streak; addXP(5);
+    fb.className="feedback ok show"; fb.innerHTML=`✅ <b>${c.en}</b> = ${c.zh}`; }
+  else{ S.streak=0; fb.className="feedback no show"; fb.innerHTML=`❌ <b>${c.en}</b> = ${correct}`; }
+  save(); paintTop();
+  const b=document.createElement('button'); b.className="btn btn-primary"; b.style.marginTop="14px";
+  b.textContent=cIdx===cList.length-1?"完成 🏁":"下一个 →";
+  b.onclick=()=>{ if(cIdx<cList.length-1){cIdx++; renderChunk();} else { toast("🧩 词块过完 +"+cRight*5+"XP"); home(); } };
+  fb.appendChild(b);
+}
+
+/* ============ 金句拼一拼 ============ */
+let sList=[], sIdx=0;
+function sentenceMode(){ sList=shuffle(SENTENCES); sIdx=0; renderSent(); }
+function renderSent(){
+  const s=sList[sIdx];
+  const words=s.en.split(/\s+/);
+  const pool=shuffle(words.map((w,i)=>({w,id:i})));
+  app().innerHTML=`
+    <div class="hdr"><button class="back" onclick="home()">← 返回</button><span class="prog">${sIdx+1}/${sList.length}</span></div>
+    <div class="card">
+      <div class="qtype">📝 金句拼一拼</div>
+      <div class="zh-hint">🇨🇳 ${s.zh}</div>
+      <div class="answer-area" id="ans"></div>
+      <div class="pool" id="pool">
+        ${pool.map(p=>`<div class="chip" data-id="${p.id}" data-w="${encodeURIComponent(p.w)}" onclick="pickWord(this)">${p.w}</div>`).join('')}
+      </div>
+      <div class="feedback" id="fb"></div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="resetSent()">🔄 重排</button>
+        <button class="btn btn-primary" onclick="checkSent()">检查 ✓</button>
+      </div>
+    </div>`;
+  window._sentTarget = words;
+}
+function pickWord(chip){
+  const ans=document.getElementById('ans');
+  if(chip.classList.contains('in-answer')){ chip.classList.remove('in-answer'); document.getElementById('pool').appendChild(chip); }
+  else { chip.classList.add('in-answer'); ans.appendChild(chip); }
+}
+function resetSent(){ renderSent(); }
+function checkSent(){
+  const got=[...document.querySelectorAll('#ans .chip')].map(c=>decodeURIComponent(c.dataset.w));
+  const s=sList[sIdx]; const fb=document.getElementById('fb');
+  const ok = got.join(' ').toLowerCase()===s.en.toLowerCase();
+  if(ok){ S.streak++; if(S.streak>S.best)S.best=S.streak; addXP(10);
+    fb.className="feedback ok show";
+    fb.innerHTML=`🎉 完全正确！<div class="sent-en">${s.en}</div>
+      <button class="btn btn-sound" onclick="speak('${s.en.replace(/'/g,"")}',false,this)" style="width:auto;padding:8px 16px;flex:0">🔊 听一遍</button>`;
+    speak(s.en,false);
+    const b=document.createElement('button'); b.className="btn btn-primary"; b.style.marginTop="12px";
+    b.textContent=sIdx===sList.length-1?"全部完成 🏁":"下一句 →";
+    b.onclick=()=>{ if(sIdx<sList.length-1){sIdx++; renderSent();} else { toast("📝 金句全过！"); home(); } };
+    fb.appendChild(b);
+  } else {
+    S.streak=0; save(); paintTop();
+    fb.className="feedback no show";
+    fb.innerHTML=`❌ 顺序还不对，再调调看~ <span style="color:var(--dim)">提示：第一个词是 <b>${s.en.split(' ')[0]}</b></span>`;
+  }
+}
+
+/* ============ 跟读练发音 ============ */
+let spIdx=0, spAll=[];
+function speakMode(){
+  spAll = [...SENTENCES.map(s=>({t:s.en,z:s.zh})), ...CHUNKS.map(c=>({t:c.en,z:c.zh}))];
+  spAll = shuffle(spAll); spIdx=0; renderSpeak();
+}
+function renderSpeak(){
+  const it=spAll[spIdx];
+  app().innerHTML=`
+    <div class="hdr"><button class="back" onclick="home()">← 返回</button><span class="prog">${spIdx+1}/${spAll.length}</span></div>
+    <div class="card" style="text-align:center">
+      <div class="qtype">🔊 听标准发音 · 跟着读</div>
+      <div class="sent-en" style="font-size:22px;margin:18px 0 8px">${it.t}</div>
+      <div class="zh-hint" style="text-align:center">${it.z}</div>
+      <div class="row">
+        <button class="btn btn-sound" onclick="speak('${it.t.replace(/'/g,"")}',false,this)">🔊</button>
+        <button class="btn btn-ghost" onclick="speak('${it.t.replace(/'/g,"")}',true,this)">🐢 慢速精听</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="prevSpeak()" ${spIdx===0?'disabled style=opacity:.4':''}>← 上一句</button>
+        <button class="btn btn-primary" onclick="nextSpeak()">${spIdx===spAll.length-1?'完成 ✓':'下一句 →'}</button>
+      </div>
+      <p class="muted" style="margin-top:18px">先正常速度听一遍，再用 🐢 慢速听清每个音，最后自己跟读 2-3 次</p>
+    </div>`;
+  setTimeout(()=>speak(it.t,false),300);
+}
+function nextSpeak(){ if(spIdx<spAll.length-1){spIdx++; renderSpeak();} else { addXP(8); toast("🔊 跟读完成 +8XP"); home(); } }
+function prevSpeak(){ if(spIdx>0){spIdx--; renderSpeak();} }
+
+/* ============ 启动 ============ */
+home();
+</script>
+</body>
+</html>
