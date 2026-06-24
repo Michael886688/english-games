@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Altman 英语闯关 · Sam Altman @ Stanford</title>
+<script>
+/* 诊断探针：任何脚本错误都显示在屏幕上，便于在手机上定位 */
+window.__showErr=function(m){try{var d=document.getElementById('app')||document.body;var e=document.createElement('div');e.style.cssText='margin:14px;padding:14px;background:#2a1416;border:1px solid #ff5d6c;border-radius:12px;color:#ffd2d6;font:13px/1.7 -apple-system,sans-serif;word-break:break-word';e.textContent='⚠️ 脚本出错(请截图发我): '+m;if(d===document.body){d.insertBefore(e,d.firstChild);}else{d.innerHTML='';d.appendChild(e);}}catch(_){}};
+window.onerror=function(msg,src,line,col){window.__showErr(String(msg)+'  @'+line+':'+col);return false;};
+</script>
 <style>
   :root{
     --bg:#0e1014; --card:#181b22; --card2:#1f232c; --line:#2a2f3a;
@@ -526,7 +531,7 @@ function nextSpeak(){ if(spIdx<spAll.length-1){spIdx++; renderSpeak();} else { a
 function prevSpeak(){ if(spIdx>0){spIdx--; renderSpeak();} }
 
 /* ============ 启动 ============ */
-home();
+try{ home(); }catch(e){ if(window.__showErr) window.__showErr('home: '+(e&&e.message||e)); }
 </script>
 </body>
 </html>
