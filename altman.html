@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Altman 英语闯关 · Sam Altman @ Stanford</title>
 <style>
   :root{
@@ -11,13 +11,15 @@
     --good:#37d399; --bad:#ff5d6c; --gold:#ffce4d; --warn:#ffb454;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%}
+  html,body{margin:0;min-height:100%}
   body{
     background:radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 55%);
     color:var(--txt); font-family:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-    display:flex; flex-direction:column; align-items:center; min-height:100%;
+    display:flex; flex-direction:column; align-items:center; min-height:100vh;
+    overflow-x:hidden; overflow-wrap:break-word; word-break:break-word;
   }
-  .wrap{width:100%; max-width:680px; padding:16px 16px 60px; flex:1}
+  .word-en,.q,.sent-en{overflow-wrap:break-word}
+  .wrap{width:100%; max-width:680px; padding:16px 16px calc(60px + env(safe-area-inset-bottom)); flex:1}
   /* top bar */
   .top{display:flex; align-items:center; gap:10px; margin:4px 0 14px}
   .badge{display:flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--line);
@@ -159,6 +161,28 @@ const WORDS = [
   {en:"incredible", pos:"adj.", zh:"了不起的", ic:"😲", usage:"<b>incredible</b> models 了不起的模型", tip:"读 /ɪnˈkredəbl/，重音在 'cred'，结尾 -ble 轻轻一带。"},
   {en:"analogy", pos:"n.", zh:"类比", ic:"🔗", usage:"a good <b>analogy</b> 一个好类比", tip:"读 /əˈnælədʒi/，重音在 'nal'，结尾 -gy 发 'jee'。"},
   {en:"electricity", pos:"n.", zh:"电", ic:"⚡", usage:"electricity is a <b>utility</b> 电是基础设施", tip:"读 /ɪˌlekˈtrɪsəti/，重音在 'tri'，一长串，节奏 i-lek-TRI-si-ty。"},
+  {en:"pipeline", pos:"n.", zh:"流程管线（训练管线）", ic:"🛢️", usage:"pre-/mid-/post-training <b>pipeline</b> 训练管线", tip:"读 /ˈpaɪplaɪn/，pipe 押 'my' 的韵，两段都长音，重音在前。"},
+  {en:"API", pos:"n.", zh:"接口", ic:"🔌", usage:"put it into an <b>API</b> 做成 API 开放", tip:"三字母分开念 /eɪ piː aɪ/，最后一个是 'eye'。"},
+  {en:"chatbot", pos:"n.", zh:"聊天机器人", ic:"💬", usage:"build a <b>chatbot</b> 做个聊天机器人", tip:"读 /ˈtʃætbɑːt/，chat 像“切特”，bot 美音“巴特”，重音在前。"},
+  {en:"research lab", pos:"n.", zh:"研究实验室", ic:"🔬", usage:"<b>research-first</b> 先做研究再做产品", tip:"research 美音 /ˈriːsɜːrtʃ/，lab /læb/；两词连读，re 长音 'ree'。"},
+  {en:"run rate", pos:"n.", zh:"年化营收", ic:"📊", usage:"a $20M <b>run rate</b> business", tip:"run /rʌn/ 短促，rate /reɪt/ 长音 'ay'；两词重音都在自己上。"},
+  {en:"labor", pos:"n.", zh:"劳动（力）", ic:"🔨", usage:"shifts from <b>labor</b> to capital 劳动转向资本", tip:"读 /ˈleɪbər/，重音在前，la 是长音 'lay'。英式拼 labour，同音。"},
+  {en:"hardware", pos:"n.", zh:"硬件／芯片", ic:"🔧", usage:"<b>hardware</b> / chip / GPU 算力的物理载体", tip:"读 /ˈhɑːrdwer/，重音在前 'hard'，结尾 -ware 像 'where'。"},
+  {en:"metaphor", pos:"n.", zh:"隐喻", ic:"🎨", usage:"a useful <b>metaphor</b> 一个有用的隐喻", tip:"读 /ˈmetəfɔːr/，重音在前 'me'，结尾 -phor 发 'for'。"},
+  {en:"solution", pos:"n.", zh:"解法", ic:"🗝️", usage:"optimal <b>solution</b> 最优解", tip:"读 /səˈluːʃn/，重音在 'lu'，-tion 发 'shn'。"},
+  {en:"business", pos:"n.", zh:"生意／业务", ic:"🏢", usage:"<b>business</b> model 商业模式", tip:"读 /ˈbɪznəs/，中间的 i 不发音！像 'biz-nis'，s 发 z。"},
+  {en:"continue", pos:"v.", zh:"持续", ic:"➡️", usage:"<b>continue</b> exponentially 指数级持续", tip:"读 /kənˈtɪnjuː/，重音在 'tin'，结尾 -ue 发 'yoo'。"},
+  {en:"field", pos:"n.", zh:"领域", ic:"🌾", usage:"held back the <b>field</b> 拖累了整个领域", tip:"读 /fiːld/，长音 'ee'，结尾 -ld 舌尖顶上颚收住。"},
+  {en:"generation", pos:"n.", zh:"一代（人）", ic:"👨‍👩‍👧", usage:"a <b>generation</b> of scientists 一代科学家", tip:"读 /ˌdʒenəˈreɪʃn/，重音在 'ra'，开头 ge 发 'jen'。"},
+  {en:"believe", pos:"v.", zh:"相信", ic:"🙏", usage:"<b>believe</b> it can work 相信它能成", tip:"读 /bɪˈliːv/，重音在后 'lieve'，长音 'ee'，结尾 v 咬下唇。"},
+  {en:"distribute", pos:"v.", zh:"分配", ic:"📤", usage:"<b>distribute</b> compute 分配算力", tip:"读 /dɪˈstrɪbjuːt/，重音在中间 'trib'，bu 带 y 音 'byoo'。"},
+  {en:"fraction", pos:"n.", zh:"一部分／比例", ic:"🍕", usage:"a significant <b>fraction</b> of the wealth 财富的相当一部分", tip:"读 /ˈfrækʃn/，fr 连读，-tion 发 'shn'。"},
+  {en:"shares", pos:"n.", zh:"股票／股份", ic:"📜", usage:"own <b>shares</b> 持有股份", tip:"读 /ʃerz/，sh 像嘘声，结尾 -res 带出 z 音。"},
+  {en:"disprove", pos:"v.", zh:"证伪", ic:"❌", usage:"<b>disprove</b> a conjecture 证伪一个猜想", tip:"读 /dɪsˈpruːv/，重音在后 'prove'，长音 'oo'。"},
+  {en:"become", pos:"v.", zh:"变成", ic:"🔄", usage:"<b>become</b> inference companies 变成推理公司", tip:"读 /bɪˈkʌm/，重音在后，come 发 'kum'（短音）。"},
+  {en:"reason", pos:"v./n.", zh:"推理；原因", ic:"💭", usage:"<b>reason</b> through 推演；推理", tip:"读 /ˈriːzn/，长音 'ee'，s 发 z，重音在前。"},
+  {en:"push", pos:"v.", zh:"推进／加力", ic:"💪", usage:"<b>push</b> on something / push hard 加力推进", tip:"读 /pʊʃ/，u 是短音（像 'put' 的 u），不是 'pursh'。"},
+  {en:"happen", pos:"v.", zh:"发生", ic:"✴️", usage:"what would <b>happen</b> 会发生什么", tip:"读 /ˈhæpən/，重音在前，a 张大嘴 'æ'，双 p。"},
 ];
 
 const CHUNKS = [
@@ -193,8 +217,9 @@ const SENTENCES = [
 ];
 
 /* ============ 状态 ============ */
-let S = JSON.parse(localStorage.getItem("altman_en")||"null") || {xp:0, level:1, streak:0, best:0, seen:{}};
-function save(){localStorage.setItem("altman_en", JSON.stringify(S));}
+let S; try{ S = JSON.parse(localStorage.getItem("altman_en")||"null"); }catch(e){ S=null; }
+S = S || {xp:0, level:1, streak:0, best:0, seen:{}};
+function save(){ try{ localStorage.setItem("altman_en", JSON.stringify(S)); }catch(e){} }
 function xpForLevel(l){return 60 + (l-1)*40;}
 function addXP(n){
   S.xp += n;
