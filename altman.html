@@ -243,21 +243,27 @@ function paintTop(){
 }
 
 /* ============ 发音（英语 TTS）============ */
+/* 用安全别名：浏览器(如部分国产内核)没有语音对象时当 null，绝不裸引用抛错 */
+var SS = (typeof window!=='undefined' && window.speechSynthesis) ? window.speechSynthesis : null;
+var SU = (typeof window!=='undefined' && window.SpeechSynthesisUtterance) ? window.SpeechSynthesisUtterance : null;
 let enVoice=null;
 function pickVoice(){
-  const vs = speechSynthesis.getVoices();
+  if(!SS) return;
+  var vs = SS.getVoices() || [];
   enVoice = vs.find(v=>/en[-_]US/i.test(v.lang) && /female|samantha|zira|aria|jenny/i.test(v.name))
          || vs.find(v=>/en[-_]US/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || null;
 }
-if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+if(SS){ try{ pickVoice(); SS.onvoiceschanged = pickVoice; }catch(e){} }
 function speak(text, slow, btn){
-  if(!('speechSynthesis' in window)) { toast("此浏览器不支持发音"); return; }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang="en-US"; if(enVoice) u.voice=enVoice;
-  u.rate = slow?0.62:0.92; u.pitch=1;
-  if(btn){ btn.classList.add("playing"); u.onend=()=>btn.classList.remove("playing"); u.onerror=()=>btn.classList.remove("playing"); }
-  speechSynthesis.speak(u);
+  if(!SS || !SU){ toast("此浏览器不支持发音（换系统浏览器可听）"); return; }
+  try{
+    SS.cancel();
+    var u = new SU(text);
+    u.lang="en-US"; if(enVoice) u.voice=enVoice;
+    u.rate = slow?0.62:0.92; u.pitch=1;
+    if(btn){ btn.classList.add("playing"); u.onend=()=>btn.classList.remove("playing"); u.onerror=()=>btn.classList.remove("playing"); }
+    SS.speak(u);
+  }catch(e){}
 }
 
 /* ============ 小工具 ============ */
@@ -270,7 +276,7 @@ function toast(msg){
 
 /* ============ 主菜单 ============ */
 function home(){
-  speechSynthesis && speechSynthesis.cancel();
+  if(SS){ try{ SS.cancel(); }catch(e){} }
   app().innerHTML = `
     <h1>Altman 英语闯关 🎮</h1>
     <p class="sub">Sam Altman @ Stanford · 边玩边学单词 / 句子 / 发音</p>
