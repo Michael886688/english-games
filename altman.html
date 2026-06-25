@@ -242,10 +242,11 @@ function paintTop(){
   document.getElementById("lvlfill").style.width = Math.min(100,(S.xp/xpForLevel(S.level))*100)+"%";
 }
 
-/* ============ 发音（英语 TTS）============ */
-/* 用安全别名：浏览器(如部分国产内核)没有语音对象时当 null，绝不裸引用抛错 */
+/* ============ 发音：在线真人发音(全机型可用) + 浏览器语音兜底 ============ */
+/* 安全别名：浏览器(如部分国产内核)没有语音对象时当 null，绝不裸引用抛错 */
 var SS = (typeof window!=='undefined' && window.speechSynthesis) ? window.speechSynthesis : null;
 var SU = (typeof window!=='undefined' && window.SpeechSynthesisUtterance) ? window.SpeechSynthesisUtterance : null;
+var _audio = null;
 let enVoice=null;
 function pickVoice(){
   if(!SS) return;
@@ -254,8 +255,26 @@ function pickVoice(){
          || vs.find(v=>/en[-_]US/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || null;
 }
 if(SS){ try{ pickVoice(); SS.onvoiceschanged = pickVoice; }catch(e){} }
+/* 主：有道词典发音(国内可访问，单词/短句都支持，<audio> 几乎所有浏览器都能播) */
 function speak(text, slow, btn){
-  if(!SS || !SU){ toast("此浏览器不支持发音（换系统浏览器可听）"); return; }
+  try{
+    if(SS){ try{ SS.cancel(); }catch(e){} }
+    if(!_audio){ _audio = new Audio(); }
+    try{ _audio.pause(); }catch(e){}
+    var clr = function(){ if(btn) btn.classList.remove("playing"); };
+    _audio.onended = clr; _audio.onpause = clr;
+    _audio.onerror = function(){ clr(); speakTTS(text, slow, btn); };   // 在线失败→浏览器语音兜底
+    _audio.src = "https://dict.youdao.com/dictvoice?type=2&audio=" + encodeURIComponent(text);
+    try{ _audio.playbackRate = slow ? 0.6 : 1.0;
+         _audio.preservesPitch = _audio.mozPreservesPitch = _audio.webkitPreservesPitch = true; }catch(e){}
+    if(btn) btn.classList.add("playing");
+    var p = _audio.play();
+    if(p && p.catch) p.catch(function(){ clr(); speakTTS(text, slow, btn); });
+  }catch(e){ speakTTS(text, slow, btn); }
+}
+/* 兜底：浏览器自带语音合成(离线，但部分国产内核没有) */
+function speakTTS(text, slow, btn){
+  if(!SS || !SU){ if(btn) btn.classList.remove("playing"); toast("发音需要联网～"); return; }
   try{
     SS.cancel();
     var u = new SU(text);
@@ -263,7 +282,7 @@ function speak(text, slow, btn){
     u.rate = slow?0.62:0.92; u.pitch=1;
     if(btn){ btn.classList.add("playing"); u.onend=()=>btn.classList.remove("playing"); u.onerror=()=>btn.classList.remove("playing"); }
     SS.speak(u);
-  }catch(e){}
+  }catch(e){ if(btn) btn.classList.remove("playing"); }
 }
 
 /* ============ 小工具 ============ */
@@ -277,6 +296,7 @@ function toast(msg){
 /* ============ 主菜单 ============ */
 function home(){
   if(SS){ try{ SS.cancel(); }catch(e){} }
+  try{ if(_audio) _audio.pause(); }catch(e){}
   app().innerHTML = `
     <h1>Altman 英语闯关 🎮</h1>
     <p class="sub">Sam Altman @ Stanford · 边玩边学单词 / 句子 / 发音</p>
